@@ -1,17 +1,16 @@
+# Plataforma de Registro de Eventos via QR Code + Google Sheets
 
-# Controle de Atividades via QR Code + Google Sheets
-
-Sistema simples e eficiente de controle de entrada e saída de atividades utilizando QR Codes e integração com Google Sheets.
+Sistema base, simples e eficiente, para controle de entrada e saída de eventos ou atividades, utilizando QR Codes e integração em tempo real com Google Sheets.
 
 ## Visão Geral
 
-Este projeto permite:
-- Captura de QR Code via imagem
-- Registro automático de entrada e saída
-- Cálculo de tempo total
-- Envio dos dados para uma planilha do Google em tempo real
+Este projeto é uma plataforma flexível que permite:
+- Processar um QR Code a partir de uma imagem para obter um identificador único.
+- Registrar automaticamente a **entrada** (início) e **saída** (fim) de um evento.
+- Calcular o tempo total de duração do evento.
+- Enviar todos os dados para uma planilha do Google em tempo real para fácil visualização e análise.
 
-Ideal para controle de tempo de uso de laboratório, eventos, coworkings, entre outros.
+É ideal para ser adaptado em cenários como controle de tempo de uso de máquinas, registro de horas de estudo (Pomodoro), controle de empréstimo de ferramentas, entre outros.
 
 ---
 
@@ -19,11 +18,11 @@ Ideal para controle de tempo de uso de laboratório, eventos, coworkings, entre 
 
 ```
 .
-├── Server_Decoder.py       # Servidor Flask que processa imagens com QR Code
-├── Code_Using_Image.ino    # (Opcional) Código Arduino para capturar e enviar imagem
-├── exemplo_qr.jpg          # Exemplo de imagem com QR Code
-├── AppsScript.gs           # Código Google Apps Script vinculado à planilha
-└── README.md               # Documentação do projeto
+├── Server_Decoder.py          # Servidor Flask que processa os eventos
+├── Code_Using_Image.ino.ino   # (Opcional) Código Arduino para enviar o gatilho do evento
+├── exemplo_qr.png             # Exemplo de imagem com QR Code (ID: "ID-MAQUINA-01")
+├── Code.gs                    # Código Google Apps Script vinculado à planilha
+└── README.md                  # Documentação do projeto
 ```
 
 ---
@@ -38,104 +37,109 @@ Ideal para controle de tempo de uso de laboratório, eventos, coworkings, entre 
   - pytz
 - **Google Apps Script**
 - **Google Sheets**
-- **(Opcional)** Arduino com câmera
+- **(Opcional)** Arduino/ESP8266
 
 ---
 
-## 🚀 Como Usar
+## Como Usar
 
 ### 1. Configurar a Planilha
 
-Crie uma planilha no Google Drive com uma aba chamada `Registros`. O script adicionará automaticamente o cabeçalho:
+Crie uma planilha no Google Drive com uma aba chamada `Registros`. O script adicionará automaticamente o cabeçalho na primeira vez que for executado:
 
-```
-["Data (Entrada)", "Hora (Entrada)", "Atividade", "Data (Saída)", "Hora (Saída)", "Tempo Total"]
-```
+`["Identificador", "Data (Entrada)", "Hora (Entrada)", "Data (Saída)", "Hora (Saída)", "Tempo Decorrido"]`
 
 ### 2. Código do Google Apps Script
 
-Acesse `Extensões > Apps Script` na planilha e cole o conteúdo abaixo:
+Acesse `Extensões > Apps Script` na sua planilha e cole o conteúdo abaixo:
 
 ```javascript
 function doGet(e) {
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName("Registros");
-    if (!sheet) {
-      sheet = ss.getSheets()[0];
-      if (sheet.getLastRow() === 0) {
-        sheet.appendRow(["Data (Entrada)", "Hora (Entrada)", "Atividade", "Data (Saída)", "Hora (Saída)", "Tempo Total"]);
-      }
-    } else {
-      if (sheet.getLastRow() === 0) {
-        sheet.appendRow(["Data (Entrada)", "Hora (Entrada)", "Atividade", "Data (Saída)", "Hora (Saída)", "Tempo Total"]);
-      }
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Registros");
+    
+    // Cria o cabeçalho se a planilha estiver vazia
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow([
+        "Identificador", 
+        "Data (Entrada)", 
+        "Hora (Entrada)", 
+        "Data (Saída)", 
+        "Hora (Saída)", 
+        "Tempo Decorrido"
+      ]);
     }
 
-    var dataEntrada = e.parameter.dataEntrada || "";
-    var horaEntrada = e.parameter.horaEntrada || "";
-    var atividade   = e.parameter.atividade   || "";
-    var dataSaida   = e.parameter.dataSaida   || "";
-    var horaSaida   = e.parameter.horaSaida   || "";
-    var tempoTotal  = e.parameter.tempoTotal  || "";
+    // Pega os parâmetros da URL
+    var id = e.parameter.identificador   || "";
+    var dataEntrada = e.parameter.dataEntrada    || "";
+    var horaEntrada = e.parameter.horaEntrada    || "";
+    var dataSaida   = e.parameter.dataSaida      || "";
+    var horaSaida   = e.parameter.horaSaida      || "";
+    var tempoTotal  = e.parameter.tempoDecorrido || "";
 
-    sheet.appendRow([dataEntrada, horaEntrada, atividade, dataSaida, horaSaida, tempoTotal]);
+    // Adiciona a linha na planilha
+    sheet.appendRow([id, dataEntrada, horaEntrada, dataSaida, horaSaida, tempoTotal]);
 
-    return ContentService.createTextOutput("SUCESSO: Dados para atividade '" + atividade + "' adicionados à planilha.").setMimeType(ContentService.MimeType.TEXT);
+    return ContentService
+      .createTextOutput("SUCESSO: Dados para o ID '" + id + "' adicionados.")
+      .setMimeType(ContentService.MimeType.TEXT);
 
   } catch (error) {
-    return ContentService.createTextOutput("ERRO no Apps Script: " + error.toString()).setMimeType(ContentService.MimeType.TEXT);
+    return ContentService
+      .createTextOutput("ERRO: " + error.toString())
+      .setMimeType(ContentService.MimeType.TEXT);
   }
 }
 ```
 
->  Publique como "Aplicativo da Web" e copie a URL para configurar no script Python.
-
----
+> **Importante:** Clique em **Implantar > Nova implantação**. Configure como **App da Web**, em "Quem pode acessar" selecione **Qualquer pessoa** e clique em "Implantar". Copie a **URL do app da Web** gerada e cole na variável `GOOGLE_SCRIPT_URL` do arquivo `Server_Decoder.py`.
 
 ### 3. Executar o Servidor Python
 
-Instale as dependências:
+Instale as dependências necessárias:
 
 ```bash
 pip install flask requests pyzbar pillow pytz
 ```
 
-Execute o servidor:
+Execute o servidor (lembre-se de preencher a URL do Google Script em `Server_Decoder.py`):
 
 ```bash
 python Server_Decoder.py
 ```
 
----
+### 4. Enviar QR Code para o Servidor
 
-### 4. Enviar QR Code para o servidor
-
-Você pode enviar uma imagem com QR Code para o endpoint `/upload_qr_bytes` via:
+Você pode simular o envio de um evento usando a imagem de exemplo (`exemplo_qr.png`) com o seguinte comando:
 
 ```bash
-curl -X POST --data-binary "@exemplo_qr.jpg" http://localhost:5000/upload_qr_bytes
+# Envie uma primeira vez para registrar a ENTRADA
+curl -X POST --data-binary "@exemplo_qr.png" http://localhost:5000/registrar-evento
+
+# Envie uma segunda vez para registrar a SAÍDA
+curl -X POST --data-binary "@exemplo_qr.png" http://localhost:5000/registrar-evento
 ```
 
 ---
 
 ## Lógica do Funcionamento
 
-1. **Primeira leitura do QR Code** → Registra *entrada*
-2. **Segunda leitura do mesmo QR Code** → Registra *saída* e envia dados para o Google Sheets
-3. Se tentar registrar outra entrada antes de registrar a saída → erro de atividade em andamento.
+1.  **Primeira leitura do QR Code** → O servidor registra uma *entrada* para o ID contido no QR Code e armazena o timestamp.
+2.  **Segunda leitura do mesmo QR Code** → O servidor identifica que já há uma entrada para aquele ID, registra a *saída*, calcula a duração, envia todos os dados para o Google Sheets e limpa o estado.
+3.  **Leitura de um QR Code diferente** → Se um evento já estiver ativo, o servidor retornará um erro de conflito, garantindo que apenas um evento seja cronometrado por vez.
 
 ---
 
-## Exemplo de Uso com Arduino (Opcional)
+## Exemplo de Uso com ESP8266 (Opcional)
 
-No arquivo `Code_Using_Image.ino` você encontrará um exemplo básico de como capturar imagem com ESP32-CAM e enviá-la para o servidor.
+No arquivo `Code_Using_Image.ino.ino` você encontrará um código base para um ESP8266. Ele não captura uma imagem, mas envia uma imagem de QR Code **pré-gravada em sua memória**, atuando como um "botão de evento" físico.
 
 ---
 
 ## Timezone
 
-Certifique-se de ajustar o fuso horário no `Server_Decoder.py`:
+O servidor utiliza um fuso horário para registrar a data e hora corretamente. Certifique-se de que ele está ajustado para sua localidade no arquivo `Server_Decoder.py`:
 
 ```python
 LOCAL_TIMEZONE = pytz.timezone('America/Sao_Paulo')
@@ -145,28 +149,31 @@ LOCAL_TIMEZONE = pytz.timezone('America/Sao_Paulo')
 
 ## Resultado Esperado na Planilha
 
-| Data (Entrada) | Hora (Entrada) | Atividade     | Data (Saída) | Hora (Saída) | Tempo Total |
-|----------------|----------------|----------------|--------------|--------------|--------------|
-| 09/06/2025     | 14:02:31       | Aula de Python | 09/06/2025   | 15:10:05     | 01:07:34     |
+| Identificador  | Data (Entrada) | Hora (Entrada) | Data (Saída) | Hora (Saída) | Tempo Decorrido |
+| :------------- | :------------- | :------------- | :----------- | :----------- | :-------------- |
+| ID-MAQUINA-01  | 20/06/2025     | 17:15:30       | 20/06/2025   | 18:05:45     | 00:50:15        |
+| Estudo-Python  | 20/06/2025     | 19:00:05       | 20/06/2025   | 19:55:10     | 00:55:05        |
 
 ---
 
-##  Testes
+## Testes
 
-- ✅ QR code legível
-- ✅ Registro de entrada
-- ✅ Registro de saída
-- ✅ Conflito de atividades detectado
-- ✅ Comunicação com Google Apps Script
+  - ✅ Decodificação de QR Code a partir de imagem.
+  - ✅ Registro correto de **entrada**.
+  - ✅ Registro correto de **saída** com cálculo de duração.
+  - ✅ Detecção de **conflito** de eventos.
+  - ✅ Comunicação e registro de dados no **Google Sheets**.
 
 ---
 
 ## Autor
+- Nome: Deivid da Silva Galvão
+- E-mail: deivid.2002@alunos.utfpr.edu.br
 
-Este projeto foi desenvolvido para fins educacionais e pode ser adaptado para ambientes reais de controle de tempo e presença.
+Este projeto foi desenvolvido como um boilerplate flexível para demonstrar a integração de tecnologias IoT, backend e serviços em nuvem. Ele pode ser livremente utilizado e adaptado.
 
 ---
 
-##  Licença
+## Licença
 
 MIT License © 2025
