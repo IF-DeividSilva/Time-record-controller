@@ -19,7 +19,7 @@ Este projeto é uma plataforma flexível que permite:
 ```
 .
 ├── Server_Decoder.py          # Servidor Flask que processa os eventos
-├── Code_Using_Image.ino.ino   # (Opcional) Código Arduino para enviar o gatilho do evento
+├── Code_Using_Image.ino       #  Código Arduino para enviar o gatilho do evento
 ├── exemplo_qr.png             # Exemplo de imagem com QR Code (ID: "ID-MAQUINA-01")
 ├── Code.gs                    # Código Google Apps Script vinculado à planilha
 └── README.md                  # Documentação do projeto
@@ -37,7 +37,7 @@ Este projeto é uma plataforma flexível que permite:
   - pytz
 - **Google Apps Script**
 - **Google Sheets**
-- **(Opcional)** Arduino/ESP8266
+-  Arduino/ESP8266
 
 ---
 
