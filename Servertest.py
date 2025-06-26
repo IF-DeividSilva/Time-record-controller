@@ -11,7 +11,7 @@ app = Flask(__name__)
 # Substitua pela URL de implantação /exec do seu Google Apps Script
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyoU1CqpEOz8bE05-ex9G7SdHDiDVxEpRBjE2EHrPQOMemYMR78AUsqTTEfmjB1dmKo/exec"
 
-# !!! COMO NÃO ESTÁ USANDO CHAVE SECRETA POR ENQUANTO, DEFINA COMO STRING VAZIA OU None !!!
+
 API_KEY_PARA_GOOGLE_SCRIPT = ""  # Ou API_KEY_PARA_GOOGLE_SCRIPT = None
 
 @app.route('/registrar_ponto', methods=['GET']) # Aceita requisições GET neste endpoint
