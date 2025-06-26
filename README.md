@@ -131,7 +131,7 @@ curl -X POST --data-binary "@exemplo_qr.png" http://localhost:5000/registrar-eve
 
 ---
 
-## Exemplo de Uso com ESP8266 (Opcional)
+## Exemplo de Uso com ESP8266
 
 No arquivo `Code_Using_Image.ino.ino` você encontrará um código base para um ESP8266. Ele não captura uma imagem, mas envia uma imagem de QR Code **pré-gravada em sua memória**, atuando como um "botão de evento" físico.
 
